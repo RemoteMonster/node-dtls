@@ -35,7 +35,8 @@ DtlsPlaintext.prototype.getFragmentType = function() {
 DtlsPlaintext.readPackets = function( data ) {
     var start = 0;
     var plaintexts = [];
-    while( data.length > start ) {
+    try {
+    while( data.length > start+11+2 ) {
 
         // Start by checking the length:
         var fragmentLength = data.readUInt16BE( start + 11 );
@@ -63,6 +64,10 @@ DtlsPlaintext.readPackets = function( data ) {
 
         start += 13 + fragmentLength;
     }
+} catch (e) {
+    console.log(`${e} len:${data.length} start:${start}`);
+    throw e;
+}
 
     return plaintexts;
 };
@@ -70,8 +75,8 @@ DtlsPlaintext.readPackets = function( data ) {
 DtlsPlaintext.prototype.getBuffer = function() {
     var buffer = new Buffer( 13 + this.fragment.length );
     buffer.writeUInt8( this.type, 0, true );
-    buffer.writeUInt8( this.version.major, 1, true );
-    buffer.writeUInt8( this.version.minor, 2, true );
+    buffer.writeInt8( this.version.major, 1, true );
+    buffer.writeInt8( this.version.minor, 2, true );
     buffer.writeUInt16BE( this.epoch, 3, true );
     this.sequenceNumber.copy( buffer, 5, 0, 6 );
     buffer.writeUInt16BE( this.fragment.length, 11, true );
