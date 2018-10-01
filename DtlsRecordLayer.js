@@ -111,43 +111,48 @@ DtlsRecordLayer.prototype.send = function( msg, callback ) {
 };
 
 DtlsRecordLayer.prototype.sendInternal = function( buffers, callback ) {
-
-    // Define the single packet callback only if the caller was interested in a
-    // callback.
-    var singlePacketCallback = null;
-    var pending = 0;
-    if( callback ) {
-        var errors = [];
-        singlePacketCallback = function( err ) {
-            if( err ) errors.push( err );
-            if( --pending === 0 ) {
-                callback( errors.length ? errors : null );
-            }
-        };
-    }
-
-    var flight = [ buffers.shift() ];
-    var flight_length = flight[0].length;
-    while( buffers.length > 0 ) {
-
-        if( buffers[0].length + flight_length > 1000 ) {
-            pending++;
-            this.dgram.send( Buffer.concat( flight ),
-                0, flight_length,
-                this.rinfo.port, this.rinfo.address, singlePacketCallback );
-
-            flight_length = 0;
-            flight = [];
+    try {
+        // Define the single packet callback only if the caller was interested in a
+        // callback.
+        var singlePacketCallback = null;
+        var pending = 0;
+        if( callback ) {
+            var errors = [];
+            singlePacketCallback = function( err ) {
+                if( err ) errors.push( err );
+                if( --pending === 0 ) {
+                    callback( errors.length ? errors : null );
+                }
+            };
         }
 
-        flight_length += buffers[0].length;
-        flight.push( buffers.shift() );
-    }
+        var flight = [ buffers.shift() ];
+        var flight_length = flight[0].length;
+        while( buffers.length > 0 ) {
 
-    pending++;
-    this.dgram.send( flight.length === 1 ? flight[0] : Buffer.concat( flight ),
-        0, flight_length,
-        this.rinfo.port, this.rinfo.address, singlePacketCallback );
+            if( buffers[0].length + flight_length > 1000 ) {
+                pending++;
+                this.dgram.send( Buffer.concat( flight ),
+                    0, flight_length,
+                    this.rinfo.port, this.rinfo.address, singlePacketCallback );
+
+                flight_length = 0;
+                flight = [];
+            }
+
+            flight_length += buffers[0].length;
+            flight.push( buffers.shift() );
+        }
+
+        pending++;
+        this.dgram.send( flight.length === 1 ? flight[0] : Buffer.concat( flight ),
+            0, flight_length,
+            this.rinfo.port, this.rinfo.address, singlePacketCallback );
+    } catch (e) {
+        if (callback) {
+            callback(e);
+        }
+    }
 };
 
 DtlsRecordLayer.prototype.decrypt = function( packet ) {
