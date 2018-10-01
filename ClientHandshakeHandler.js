@@ -180,11 +180,14 @@ ClientHandshakeHandler.prototype.handle_helloVerifyRequest = function( handshake
     var verifyRequest = new DtlsHelloVerifyRequest( handshake.body );
     this.cookie = verifyRequest.cookie;
 
+    this.setResponse( null );
+
     return this.send_clientHello;
 };
 
 ClientHandshakeHandler.prototype.handle_certificateRequest = function (handshake) {
     this.handshakeMessages.push(handshake.getBuffer());
+    this.setResponse( null );
 };
 
 /**
@@ -218,6 +221,7 @@ ClientHandshakeHandler.prototype.handle_serverHello = function( handshake, messa
 
 ClientHandshakeHandler.prototype.handle_serverKeyExchange = function( handshake, message ) {
     this.handshakeMessages.push(handshake.getBuffer());
+    this.setResponse( null );
 };
 
 ClientHandshakeHandler.prototype.handle_certificate = function( handshake, message ) {
@@ -246,6 +250,8 @@ ClientHandshakeHandler.prototype.handle_serverHelloDone = function( handshake, m
     this.newParameters.init();
 
     this.handshakeMessages.push(handshake.getBuffer());
+
+    this.setResponse( null );
 
     return this.send_certificates;
 };
@@ -374,6 +380,7 @@ ClientHandshakeHandler.prototype.send_certificates = function () {
 
 ClientHandshakeHandler.prototype.handle_newSessionTicket = function( handshake, message ) {
     var newSessionTicket = new DtlsNewSessionTicket( handshake.body );
+    this.setResponse( null );
 }
 
 /**
