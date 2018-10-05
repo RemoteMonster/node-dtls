@@ -125,17 +125,21 @@ DtlsSocket.prototype.close = function() {
 DtlsSocket.prototype.handle = function( buffer ) {
     var self = this;
 
-    this.recordLayer.getPackets( buffer, function( packet ) {
+    try {
+        this.recordLayer.getPackets( buffer, function( packet ) {
 
-        var handler = DtlsSocket.handlers[ packet.type ];
+            var handler = DtlsSocket.handlers[ packet.type ];
 
-        if( !handler ) {
-            var msgType = dtls.MessageTypeName[ packet.type ];
-            return log.error( 'Handler not found for', msgType, 'message' );
-        }
+            if( !handler ) {
+                var msgType = dtls.MessageTypeName[ packet.type ];
+                return log.error( 'Handler not found for', msgType, 'message' );
+            }
 
-        handler.call( self, packet );
-    });
+            handler.call( self, packet );
+        });
+    } catch (e) {
+        self.emit('error', e);
+    }
 };
 
 DtlsSocket.handlers = [];
